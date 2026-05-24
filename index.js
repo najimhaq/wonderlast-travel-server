@@ -79,7 +79,9 @@ app.get(
     }
 
     const { id } = req.params;
-    const destination = await destinationCollection.findOne({ _id: new ObjectId(id) });
+    const destination = await destinationCollection.findOne({
+      _id: new ObjectId(id),
+    });
 
     if (!destination) {
       return res.status(404).json({
@@ -160,6 +162,75 @@ app.post(
     });
   })
 );
+
+// Update destination route
+app.patch(
+  '/destination/:id',
+  asyncHandler(async (req, res) => {
+    if (!destinationCollection) {
+      return res.status(500).json({
+        success: false,
+        message: 'Database not connected',
+      });
+    }
+
+    const { id } = req.params;
+    const updateData = req.body;
+
+    // Add updatedAt timestamp
+    updateData.updatedAt = new Date();
+
+    const result = await destinationCollection.updateOne(
+      { _id: new ObjectId(id) },
+      { $set: updateData }
+    );
+
+    if (result.matchedCount === 0) {
+      return res.status(404).json({
+        success: false,
+        message: 'Destination not found',
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      message: 'Destination updated successfully',
+    });
+  })
+);
+
+// Delete destination route
+app.delete(
+  '/destination/:id',
+  asyncHandler(async (req, res) => {
+    if (!destinationCollection) {
+      return res.status(500).json({
+        success: false,
+        message: 'Database not connected',
+      });
+    }
+
+    const { id } = req.params;
+    const result = await destinationCollection.deleteOne({
+      _id: new ObjectId(id),
+    });
+
+    if (result.deletedCount === 0) {
+      return res.status(404).json({
+        success: false,
+        message: 'Destination not found',
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      message: 'Destination deleted successfully',
+    });
+  })
+);
+
+//error handling middleware
+app.use(errorMiddleware);
 
 // Start server
 async function startServer() {

@@ -29,6 +29,7 @@ async function connectToDatabase() {
     await client.connect();
     const db = client.db('wonderlast');
     destinationCollection = db.collection('destinations');
+    bookingCollection = db.collection('bookings');
 
     // Send a ping to confirm a successful connection
     await client.db('admin').command({ ping: 1 });
@@ -225,6 +226,28 @@ app.delete(
     res.status(200).json({
       success: true,
       message: 'Destination deleted successfully',
+    });
+  })
+);
+//Booking Data get route
+app.post(
+  '/booking',
+  asyncHandler(async (req, res) => {
+    if (!bookingCollection) {
+      return res.status(500).json({
+        success: false,
+        message: 'Database not connected',
+      });
+    }
+
+    const bookingData = req.body;
+
+    const bookingResult = await bookingCollection.insertOne(bookingData);
+
+    return res.status(201).json({
+      success: true,
+      data: bookingResult,
+      message: 'Booking created successfully',
     });
   })
 );

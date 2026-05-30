@@ -5,6 +5,7 @@ const cors = require('cors');
 const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 const errorMiddleware = require('./middleware/errorMiddleware');
 const asyncHandler = require('./middleware/asyncHandler');
+const verifyTokenMiddleware = require('./middleware/VerifyTokenMiddleware');
 
 const app = express();
 const PORT = process.env.PORT || 8080;
@@ -71,6 +72,7 @@ app.get(
 // Get destination by ID route
 app.get(
   '/destination/:id',
+  verifyTokenMiddleware,
   asyncHandler(async (req, res) => {
     if (!destinationCollection) {
       return res.status(500).json({
@@ -272,9 +274,10 @@ app.get(
   })
 );
 
-// Create booking route post
+// Create booking route post /booking
 app.post(
   '/booking',
+  verifyTokenMiddleware,
   asyncHandler(async (req, res) => {
     if (!bookingCollection) {
       return res.status(500).json({

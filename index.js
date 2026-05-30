@@ -9,7 +9,7 @@ const asyncHandler = require('./middleware/asyncHandler');
 const app = express();
 const PORT = process.env.PORT || 8080;
 
-app.use(cors());
+app.use(cors({ origin: 'http://localhost:3000' }));
 app.use(express.json());
 
 // Create a MongoClient
@@ -229,7 +229,50 @@ app.delete(
     });
   })
 );
+
 //Booking Data get route
+app.get(
+  '/booking',
+  asyncHandler(async (req, res) => {
+    if (!bookingCollection) {
+      return res
+        .status(500)
+        .json({ success: false, message: 'Database not connected' });
+    }
+
+    const { userId } = req.query; // ?userId=...
+    const query = userId ? { userId } : {};
+
+    const bookings = await bookingCollection.find(query).toArray();
+
+    return res.status(200).json({
+      success: true,
+      data: bookings,
+    });
+  })
+);
+
+// Create booking route by id
+app.get(
+  '/booking/:id',
+  asyncHandler(async (req, res) => {
+    const { id } = req.params;
+
+    const booking = await bookingCollection.findOne({
+      _id: new ObjectId(id),
+    });
+
+    if (!booking) {
+      return res
+        .status(404)
+        .json({ success: false, message: 'Booking not found' });
+    }
+
+    return res.status(200).json({ success: true, data: booking });
+  })
+);
+
+// Create booking route post
 app.post(
   '/booking',
   asyncHandler(async (req, res) => {
@@ -241,13 +284,53 @@ app.post(
     }
 
     const bookingData = req.body;
-
     const bookingResult = await bookingCollection.insertOne(bookingData);
 
     return res.status(201).json({
       success: true,
       data: bookingResult,
       message: 'Booking created successfully',
+    });
+  })
+);
+
+//Booking Data delete route
+app.delete(
+  '/booking/:id',
+  asyncHandler(async (req, res) => {
+    if (!bookingCollection) {
+      return res.status(500).json({
+        success: false,
+        message: 'Database not connected',
+      });
+    }
+
+    const { id } = req.params;
+    // console.log('DELETE request for id:', id);
+
+    if (!ObjectId.isValid(id)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid booking ID',
+      });
+    }
+
+    const result = await bookingCollection.deleteOne({
+      _id: new ObjectId(id),
+    });
+
+    console.log('deletedCount:', result.deletedCount);
+
+    if (result.deletedCount === 0) {
+      return res.status(404).json({
+        success: false,
+        message: 'Booking not found',
+      });
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: 'Booking cancelled successfully',
     });
   })
 );
